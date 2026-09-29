@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LAKSHMI | Saree Tassels</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#fff8f2;color:#3b2430}
+header{background:linear-gradient(135deg,#7d163d,#b83c69);color:#fff;padding:28px 18px;text-align:center}
+header h1{margin:0;font-size:34px;letter-spacing:2px}header p{margin:8px 0 0;opacity:.9}
+.wrap{max-width:1100px;margin:auto;padding:24px 16px}.products{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:18px}
+.card{background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 5px 20px #00000012;border:1px solid #f1dce4}
+.card img{width:100%;height:210px;object-fit:cover;background:#f5e8ed}.noimg{height:210px;display:grid;place-items:center;color:#9b7180;background:#f7edf1}
+.info{padding:14px}.name{font-weight:700;font-size:17px}.price{color:#a51f52;font-size:19px;font-weight:700;margin:7px 0 12px}
+button{border:0;border-radius:10px;padding:10px 13px;font-weight:700;cursor:pointer}
+.select{background:#a51f52;color:#fff;width:100%}.selected{background:#f1d1dd;color:#7d163d;width:100%}
+.order{position:sticky;bottom:12px;background:#fff;border:1px solid #ead1da;border-radius:18px;padding:16px;box-shadow:0 8px 25px #0002;margin-top:25px}
+.order h2{margin:0 0 10px}.row{display:flex;gap:10px;flex-wrap:wrap}.row input{flex:1;min-width:220px;padding:12px;border:1px solid #d9bdc7;border-radius:10px}
+.whatsapp{background:#1fa855;color:#fff}.small{font-size:13px;color:#80616c}
+.empty{text-align:center;padding:50px;color:#80616c}
+</style>
+</head>
+<body>
+<header><h1>LAKSHMI</h1><p>Saree Tassels Collection</p></header>
+<div class="wrap">
+  <div id="products" class="products"></div>
+  <div class="order">
+    <h2>Your Selection</h2>
+    <div id="selection" class="small">No items selected.</div>
+    <div class="row" style="margin-top:12px">
+      <input id="customerName" placeholder="Enter your name">
+      <button class="whatsapp" onclick="sendOrder()">Send Selection on WhatsApp</button>
+    </div>
+    <div class="small" style="margin-top:8px">Your WhatsApp message will open with the selected tassels and prices.</div>
+  </div>
+</div>
+<script>
+let products=[], selected=new Set();
+async function load(){
+  const r=await fetch('/api/products'); products=await r.json(); render();
+}
+function render(){
+  const box=document.getElementById('products');
+  if(!products.length){box.innerHTML='<div class="empty">New tassels will be added soon.</div>';return;}
+  box.innerHTML=products.map(p=>`
+    <div class="card">
+      ${p.image?`<img src="${p.image}" alt="${esc(p.name)}">`:`<div class="noimg">LAKSHMI</div>`}
+      <div class="info"><div class="name">${esc(p.name)}</div><div class="price">₹${Number(p.price).toFixed(0)}</div>
+      <button class="${selected.has(p.id)?'selected':'select'}" onclick="toggle(${p.id})">${selected.has(p.id)?'Selected ✓':'Select'}</button></div>
+    </div>`).join('');
+  updateSelection();
+}
+function toggle(id){selected.has(id)?selected.delete(id):selected.add(id);render()}
+function updateSelection(){
+ const chosen=products.filter(p=>selected.has(p.id));
+ document.getElementById('selection').innerHTML=chosen.length?chosen.map(p=>`${esc(p.name)} — ₹${Number(p.price).toFixed(0)}`).join('<br>'):'No items selected.';
+}
+function sendOrder(){
+ const name=document.getElementById('customerName').value.trim();
+ const chosen=products.filter(p=>selected.has(p.id));
+ if(!name)return alert('Please enter your name.');
+ if(!chosen.length)return alert('Please select at least one tassel.');
+ const lines=chosen.map(p=>`• ${p.name} - ₹${Number(p.price).toFixed(0)}`).join('\\n');
+ const total=chosen.reduce((s,p)=>s+Number(p.price),0);
+ const msg=`Hello LAKSHMI,\\n\\nMy name is ${name}. I would like these saree tassels:\\n${lines}\\n\\nTotal: ₹${total.toFixed(0)}\\n\\nPlease confirm availability.`;
+ window.open('https://wa.me/919398463438?text='+encodeURIComponent(msg),'_blank');
+}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+load();
+</script>
+</body>
+</html>

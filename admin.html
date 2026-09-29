@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LAKSHMI Admin</title>
+<style>
+body{margin:0;font-family:Arial;background:#faf5f7;color:#3b2430}.top{background:#7d163d;color:#fff;padding:18px 22px;display:flex;justify-content:space-between;align-items:center}.wrap{max-width:1000px;margin:auto;padding:22px}.panel{background:#fff;border-radius:16px;padding:20px;margin-bottom:20px;box-shadow:0 4px 18px #0001}input{padding:11px;border:1px solid #d9bdc7;border-radius:9px;width:100%;margin:5px 0 12px}button{padding:10px 15px;border:0;border-radius:9px;font-weight:700;cursor:pointer;background:#a51f52;color:#fff}.danger{background:#a51f52}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}.item{border:1px solid #ead7de;border-radius:14px;padding:12px}.item img{width:100%;height:190px;object-fit:cover;border-radius:10px;background:#f5e8ed}.hidden{display:none}.login{max-width:400px;margin:80px auto}.muted{color:#80616c;font-size:13px}
+</style>
+</head>
+<body>
+<div class="top"><b>LAKSHMI — Admin</b><button id="logout" onclick="logout()">Logout</button></div>
+<div class="wrap">
+<div id="login" class="panel login">
+<h2>Admin Login</h2>
+<input id="user" placeholder="Username">
+<input id="pass" type="password" placeholder="Password">
+<button onclick="login()">Login</button><p id="err" class="muted"></p>
+</div>
+<div id="app" class="hidden">
+<div class="panel">
+<h2>Add Saree Tassel</h2>
+<input id="name" placeholder="Tassel name">
+<input id="price" type="number" min="0" placeholder="Price (₹)">
+<input id="image" type="file" accept="image/*">
+<button onclick="add()">Add Product</button>
+<p class="muted">Upload JPG, PNG or WEBP images up to 8 MB.</p>
+</div>
+<div class="panel"><h2>Your Products</h2><div id="list" class="grid"></div></div>
+</div>
+</div>
+<script>
+async function check(){const r=await fetch('/api/me');const x=await r.json();if(x.admin){show()}else{document.getElementById('logout').style.display='none'}}
+function show(){document.getElementById('login').classList.add('hidden');document.getElementById('app').classList.remove('hidden');document.getElementById('logout').style.display='block';load()}
+async function login(){const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user.value,password:pass.value})});if(r.ok)show();else err.textContent='Invalid username or password.'}
+async function logout(){await fetch('/api/logout',{method:'POST'});location.reload()}
+async function load(){const r=await fetch('/api/products');const ps=await r.json();list.innerHTML=ps.map(p=>`
+<div class="item">
+${p.image?`<img src="${p.image}">`:''}
+<input id="n${p.id}" value="${esc(p.name)}"><input id="p${p.id}" type="number" value="${p.price}">
+<input id="i${p.id}" type="file" accept="image/*">
+<button onclick="save(${p.id})">Save</button>
+<button class="danger" onclick="del(${p.id})">Delete</button>
+</div>`).join('')||'<p class="muted">No products yet.</p>'}
+async function add(){const f=new FormData();f.append('name',name.value);f.append('price',price.value);if(image.files[0])f.append('image',image.files[0]);const r=await fetch('/api/products',{method:'POST',body:f});if(r.ok){name.value='';price.value='';image.value='';load()}else alert((await r.json()).error)}
+async function save(id){const f=new FormData();f.append('name',document.getElementById('n'+id).value);f.append('price',document.getElementById('p'+id).value);const file=document.getElementById('i'+id).files[0];if(file)f.append('image',file);const r=await fetch('/api/products/'+id,{method:'PUT',body:f});if(r.ok)load();else alert((await r.json()).error)}
+async function del(id){if(!confirm('Delete this product?'))return;await fetch('/api/products/'+id,{method:'DELETE'});load()}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+check();
+</script>
+</body>
+</html>
