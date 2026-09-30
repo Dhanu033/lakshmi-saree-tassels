@@ -84,16 +84,6 @@ app.post("/api/login", (req, res) => {
   res.status(401).json({ error: "Invalid username or password" });
 });
 
-app.get("/api/check", (req, res) => {
-  res.json({
-    userSet: !!process.env.ADMIN_USER,
-    passSet: !!process.env.ADMIN_PASS,
-    userLength: ADMIN_USER.length,
-    passLength: ADMIN_PASS.length,
-    userStart: ADMIN_USER.slice(0, 3)
-  });
-});
-
 app.post("/api/logout", auth, (req, res) => {
   req.session.destroy(() => res.json({ ok: true }));
 });
